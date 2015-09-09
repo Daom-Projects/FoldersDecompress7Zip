@@ -11,7 +11,13 @@
 
 package folderzip;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 public class Main extends javax.swing.JFrame {
 
@@ -181,6 +187,44 @@ public class Main extends javax.swing.JFrame {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
+        File dir = new File(JTF_Dir.getText());
+        String[] ficheros = dir.list();
+        if (ficheros == null){
+            jTextArea1.setText("No hay ficheros en el directorio especificado");
+        }else {
+            for (int x=0;x<ficheros.length;x++){
+                String carpetaInterna = JTF_Dir.getText()+"\\"+ficheros[x];
+                File dirInt = new File(carpetaInterna);
+                String[] ficIntenos = dirInt.list();
+                if(ficIntenos != null){
+                    for (int i = 0; i < ficIntenos.length; i++) {
+                        int fileExist = ficIntenos[i].indexOf(".7z.001");
+                        if(fileExist != -1) {
+                            try {
+                                String comando = "C:\\Program Files\\7-Zip\\7z.exe x \""+carpetaInterna+"\\"+ficIntenos[i]+"\"";
+                                System.out.println(comando);
+                                Process process = Runtime.getRuntime().exec(comando);
+                                
+                                InputStream inputstream = process.getInputStream();
+                                BufferedInputStream bufferedinputstream = new BufferedInputStream(inputstream);
+                                
+                                byte[] contents = new byte[1024];
+                                int bytesRead=0;
+                                String strResultContent = null; 
+                                while( (bytesRead = bufferedinputstream.read(contents)) != -1){
+                                   strResultContent = new String(contents, 0, bytesRead);
+                                }
+                                jTextArea1.setText(strResultContent);
+                            } catch (IOException ex) {
+                                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+                    }
+                    JOptionPane.showMessageDialog(rootPane, "Se ha completado el proceso", "Proceso Terminado", JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+            
+        }
     }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
