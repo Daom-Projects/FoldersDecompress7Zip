@@ -196,12 +196,14 @@ public class Main extends javax.swing.JFrame {
                 String carpetaInterna = JTF_Dir.getText()+"\\"+ficheros[x];
                 File dirInt = new File(carpetaInterna);
                 String[] ficIntenos = dirInt.list();
+                
                 if(ficIntenos != null){
+                    String nameFile = "";
                     for (int i = 0; i < ficIntenos.length; i++) {
                         int fileExist = ficIntenos[i].indexOf(".7z.001");
                         if(fileExist != -1) {
                             try {
-                                String comando = "C:\\Program Files\\7-Zip\\7z.exe x \""+carpetaInterna+"\\"+ficIntenos[i]+"\"";
+                                String comando = "C:\\Program Files\\7-Zip\\7z.exe x \""+carpetaInterna+"\\"+ficIntenos[i]+"\" -o\""+carpetaInterna+"\\\"";
                                 System.out.println(comando);
                                 Process process = Runtime.getRuntime().exec(comando);
                                 
@@ -218,12 +220,25 @@ public class Main extends javax.swing.JFrame {
                             } catch (IOException ex) {
                                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                             }
+                            nameFile = ficIntenos[i];
+                            String[] parts = nameFile.split(".7z.");
+                            nameFile = parts[0];
                         }
                     }
-                    JOptionPane.showMessageDialog(rootPane, "Se ha completado el proceso", "Proceso Terminado", JOptionPane.INFORMATION_MESSAGE);
+                    if(!nameFile.equalsIgnoreCase("")){
+                        for (int i = 0; i < ficIntenos.length; i++) {
+                            if (ficIntenos[i].indexOf(nameFile) != -1) {
+                                File fileDeleted = new File(ficIntenos[i]);
+                                if (fileDeleted.delete())
+                                   System.out.println("El fichero ha sido borrado satisfactoriamente = "+ficIntenos[i]);
+                                else
+                                   System.out.println("El fichero no puede ser borrado = "+ficIntenos[i]);
+                            }
+                        }
+                    }
                 }
             }
-            
+            JOptionPane.showMessageDialog(rootPane, "Se ha completado el proceso", "Proceso Terminado", JOptionPane.INFORMATION_MESSAGE);
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
