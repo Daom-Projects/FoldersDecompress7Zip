@@ -43,7 +43,7 @@ public class Main extends javax.swing.JFrame {
         JTF_Dir = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        jTxtResultado = new javax.swing.JTextArea();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         jCheckBox1 = new javax.swing.JCheckBox();
@@ -73,10 +73,10 @@ public class Main extends javax.swing.JFrame {
             }
         });
 
-        jTextArea1.setEditable(false);
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jScrollPane1.setViewportView(jTextArea1);
+        jTxtResultado.setEditable(false);
+        jTxtResultado.setColumns(20);
+        jTxtResultado.setRows(5);
+        jScrollPane1.setViewportView(jTxtResultado);
 
         jLabel3.setText("Resultado:");
 
@@ -170,12 +170,12 @@ public class Main extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+        // Mostramos un dialogo para seleccionar
         int returnVal = JFC_Carpeta.showOpenDialog(this);
-        if (returnVal == JFC_Carpeta.APPROVE_OPTION) {
-            File file = JFC_Carpeta.getSelectedFile();
+        if (returnVal == JFC_Carpeta.APPROVE_OPTION) { //Se le dio aceptar al dialogo
+            File file = JFC_Carpeta.getSelectedFile(); //Obtenemos la ruta seleccionada
             try {
-                // What to do with the file, e.g. display it in a TextArea
+                // Mostramos la ruta seleccionada en el text
                 JTF_Dir.setText(file.getAbsolutePath());
             } catch (Exception ex) {
                 System.out.println("Problemas al seleccionar la carpeta"+file.getAbsolutePath());
@@ -187,52 +187,64 @@ public class Main extends javax.swing.JFrame {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
-        File dir = new File(JTF_Dir.getText());
-        String[] ficheros = dir.list();
-        if (ficheros == null){
-            jTextArea1.setText("No hay ficheros en el directorio especificado");
+        File dir = new File(JTF_Dir.getText()); //Obtenemos la carpeta seleccionada
+        String[] ficheros = dir.list(); //Obtenemos las subcarpetas
+        if (ficheros == null){ //Si la carpeta esta vacia
+            jTxtResultado.setText("No hay ficheros en el directorio especificado");
         }else {
-            for (int x=0;x<ficheros.length;x++){
-                String carpetaInterna = JTF_Dir.getText()+"\\"+ficheros[x];
-                File dirInt = new File(carpetaInterna);
-                String[] ficIntenos = dirInt.list();
+            jTxtResultado.setText("Iniciando...");
+            for (int x=0;x<ficheros.length;x++){ //Recorremos las carpetas
+                String carpetaInterna = JTF_Dir.getText()+"\\"+ficheros[x]; //Ficheros internos
+                File dirInt = new File(carpetaInterna); 
+                String[] ficInternos = dirInt.list();//Lista de archivos dentro de la subcarpeta
                 
-                if(ficIntenos != null){
+                if(ficInternos != null){ //Si hay archivos dentro de la subcarpeta
                     String nameFile = "";
-                    for (int i = 0; i < ficIntenos.length; i++) {
-                        int fileExist = ficIntenos[i].indexOf(".7z.001");
-                        if(fileExist != -1) {
+                    for (int i = 0; i < ficInternos.length; i++) {//Recorremos los archivos
+                        int fileExist = ficInternos[i].indexOf(".7z.001");//Buscamos el primer 7zip
+                        if(fileExist != -1) {//Verificamos si existe el 7zip
                             try {
-                                String comando = "C:\\Program Files\\7-Zip\\7z.exe x \""+carpetaInterna+"\\"+ficIntenos[i]+"\" -o\""+carpetaInterna+"\\\"";
+                                jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Descomprimendo "+carpetaInterna+"\\"+ficInternos[i]);
+                                String comando = "C:\\Program Files\\7-Zip\\7z.exe x \""+carpetaInterna+"\\"+ficInternos[i]+"\" -y -o\""+carpetaInterna+"\\\"";
                                 System.out.println(comando);
-                                Process process = Runtime.getRuntime().exec(comando);
+                                Process process = Runtime.getRuntime().exec(comando); //Ejecutamos el comando para descomprimir con 7Zip
                                 
+                                // Obtenemos el buffer de salida de la consola.
                                 InputStream inputstream = process.getInputStream();
                                 BufferedInputStream bufferedinputstream = new BufferedInputStream(inputstream);
                                 
+                                //Mostramos el buffer de salida en el text
                                 byte[] contents = new byte[1024];
                                 int bytesRead=0;
                                 String strResultContent = null; 
                                 while( (bytesRead = bufferedinputstream.read(contents)) != -1){
                                    strResultContent = new String(contents, 0, bytesRead);
                                 }
-                                jTextArea1.setText(strResultContent);
+                                jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Finalizo Archivo "+ficInternos[i]);;
+                                jTxtResultado.setText(jTxtResultado.getText()+"\n"+strResultContent);
+                                process.destroy();
                             } catch (IOException ex) {
+                                System.out.println(ex.getMessage());
                                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                             }
-                            nameFile = ficIntenos[i];
+                            nameFile = ficInternos[i];
                             String[] parts = nameFile.split(".7z.");
                             nameFile = parts[0];
                         }
                     }
                     if(!nameFile.equalsIgnoreCase("")){
-                        for (int i = 0; i < ficIntenos.length; i++) {
-                            if (ficIntenos[i].indexOf(nameFile) != -1) {
-                                File fileDeleted = new File(ficIntenos[i]);
-                                if (fileDeleted.delete())
-                                   System.out.println("El fichero ha sido borrado satisfactoriamente = "+ficIntenos[i]);
-                                else
-                                   System.out.println("El fichero no puede ser borrado = "+ficIntenos[i]);
+                        jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Eliminando Archivos...");
+                        for (int i = 0; i < ficInternos.length; i++) {
+                            if (ficInternos[i].indexOf(nameFile) != -1) {
+                                try {
+                                    File fn = new File(carpetaInterna+"\\"+ficInternos[i]);
+                                    fn.delete();
+                                    jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Archivo Eliminado "+ficInternos[i]);
+                                    System.out.println("El fichero ha sido borrado satisfactoriamente = "+ficInternos[i]);
+                                } catch (Exception errFil) {
+                                    System.err.println("El fichero no puede ser borrado: "+ficInternos[i]+ " ");
+                                    System.err.println(errFil);
+                                }
                             }
                         }
                     }
@@ -242,6 +254,7 @@ public class Main extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
+    
     /**
      * @param args the command line arguments
      */
@@ -293,6 +306,6 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextArea jTextArea1;
+    private javax.swing.JTextArea jTxtResultado;
     // End of variables declaration//GEN-END:variables
 }
