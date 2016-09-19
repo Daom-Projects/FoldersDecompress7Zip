@@ -24,6 +24,8 @@ public class Main extends javax.swing.JFrame {
     /**
      * Creates new form Main
      */
+    String Ruta7Zip;
+    String RutaWinRar;
     public Main() {
         initComponents();
     }
@@ -157,73 +159,135 @@ public class Main extends javax.swing.JFrame {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
-        File dir = new File(JTF_Dir.getText()); //Obtenemos la carpeta seleccionada
-        String[] ficheros = dir.list(); //Obtenemos las subcarpetas
-        if (ficheros == null){ //Si la carpeta esta vacia
-            jTxtResultado.setText("No hay ficheros en el directorio especificado");
-        }else {
-            jTxtResultado.setText("Iniciando...");
-            for (int x=0;x<ficheros.length;x++){ //Recorremos las carpetas
-                String carpetaInterna = JTF_Dir.getText()+"\\"+ficheros[x]; //Ficheros internos
-                File dirInt = new File(carpetaInterna); 
-                String[] ficInternos = dirInt.list();//Lista de archivos dentro de la subcarpeta
-                
-                if(ficInternos != null){ //Si hay archivos dentro de la subcarpeta
-                    String nameFile = "";
-                    for (int i = 0; i < ficInternos.length; i++) {//Recorremos los archivos
-                        int fileExist = ficInternos[i].indexOf(".7z.001");//Buscamos el primer 7zip
-                        if(fileExist != -1) {//Verificamos si existe el 7zip
-                            try {
-                                jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Descomprimendo "+carpetaInterna+"\\"+ficInternos[i]);
-                                String comando = "C:\\Program Files\\7-Zip\\7z.exe x \""+carpetaInterna+"\\"+ficInternos[i]+"\" -y -o\""+carpetaInterna+"\\\"";
-                                System.out.println(comando);
-                                Process process = Runtime.getRuntime().exec(comando); //Ejecutamos el comando para descomprimir con 7Zip
-                                
-                                // Obtenemos el buffer de salida de la consola.
-                                InputStream inputstream = process.getInputStream();
-                                BufferedInputStream bufferedinputstream = new BufferedInputStream(inputstream);
-                                
-                                //Mostramos el buffer de salida en el text
-                                byte[] contents = new byte[1024];
-                                int bytesRead=0;
-                                String strResultContent = null; 
-                                while( (bytesRead = bufferedinputstream.read(contents)) != -1){
-                                   strResultContent = new String(contents, 0, bytesRead);
+        
+        boolean exists7Zip = Verificar7Zip();
+        boolean existsWinRar = VerificarWinRAR();
+        
+        if (exists7Zip || existsWinRar){
+            boolean status7Zip, statusWinrar;
+            File dir = new File(JTF_Dir.getText()); //Obtenemos la carpeta seleccionada
+            String[] ficheros = dir.list(); //Obtenemos las subcarpetas
+            if (ficheros == null) { //Si la carpeta esta vacia
+                jTxtResultado.setText("No hay ficheros en el directorio especificado");
+            } else {
+                jTxtResultado.setText("Iniciando...");
+                for (int x = 0; x < ficheros.length; x++) { //Recorremos las carpetas
+                    String carpetaInterna = JTF_Dir.getText() + "\\" + ficheros[x]; //Ficheros internos
+                    File dirInt = new File(carpetaInterna);
+                    String[] ficInternos = dirInt.list();//Lista de archivos dentro de la subcarpeta
+
+                    if (ficInternos != null) { //Si hay archivos dentro de la subcarpeta
+                        String nameFile7Zip = "";
+                        String nameFileWinrar = "";
+                        for (int i = 0; i < ficInternos.length; i++) {//Recorremos los archivos
+                            
+                            if(exists7Zip){
+                                int fileExist = ficInternos[i].indexOf(".7z.001");//Buscamos el primer 7zip
+                                if(fileExist != -1) {//Verificamos si existe un archivo inicial 7zip
+                                    jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Descomprimendo "+carpetaInterna+"\\"+ficInternos[i]);
+                                    status7Zip = Descompress7Zip(carpetaInterna, ficInternos[i]);
+                                    if (status7Zip){
+                                        nameFile7Zip = ficInternos[i];
+                                        String[] parts = nameFile7Zip.split(".7z.");
+                                        nameFile7Zip = parts[0];
+                                    }
                                 }
-                                jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Finalizo Archivo "+ficInternos[i]);;
-                                jTxtResultado.setText(jTxtResultado.getText()+"\n"+strResultContent);
-                                process.destroy();
-                            } catch (IOException ex) {
-                                System.out.println(ex.getMessage());
-                                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                             }
-                            nameFile = ficInternos[i];
-                            String[] parts = nameFile.split(".7z.");
-                            nameFile = parts[0];
+                            
+                            if (existsWinRar) {
+                                int fileExist = ficInternos[i].indexOf(".part1.rar");//Buscamos el primer 7zip
+                                if (fileExist != -1) {//Verificamos si existe un archivo inicial Winrar
+                                    jTxtResultado.setText(jTxtResultado.getText() + "\n" + "Descomprimendo " + carpetaInterna + "\\" + ficInternos[i]);
+                                    statusWinrar = DescompressWinRAR(carpetaInterna, ficInternos[i]);
+                                    if (statusWinrar) {
+                                        nameFileWinrar = ficInternos[i];
+                                        String[] parts = nameFileWinrar.split(".part1.");
+                                        nameFileWinrar = parts[0];
+                                    }
+                                    
+                                }
+                            }
                         }
-                    }
-                    if(!nameFile.equalsIgnoreCase("")){
-                        jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Eliminando Archivos...");
-                        for (int i = 0; i < ficInternos.length; i++) {
-                            if (ficInternos[i].indexOf(nameFile) != -1) {
-                                try {
-                                    File fn = new File(carpetaInterna+"\\"+ficInternos[i]);
-                                    fn.delete();
-                                    jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Archivo Eliminado "+ficInternos[i]);
-                                    System.out.println("El fichero ha sido borrado satisfactoriamente = "+ficInternos[i]);
-                                } catch (Exception errFil) {
-                                    System.err.println("El fichero no puede ser borrado: "+ficInternos[i]+ " ");
-                                    System.err.println(errFil);
+                        
+                        if (!nameFile7Zip.equalsIgnoreCase("") || !nameFileWinrar.equalsIgnoreCase("")) {
+                            jTxtResultado.setText(jTxtResultado.getText() + "\n" + "Eliminando Archivos...");
+                            for (int i = 0; i < ficInternos.length; i++) {
+                                if (ficInternos[i].indexOf(nameFile7Zip) != -1) {
+                                    try {
+                                        File fn = new File(carpetaInterna + "\\" + ficInternos[i]);
+                                        fn.delete();
+                                        jTxtResultado.setText(jTxtResultado.getText() + "\n" + "Archivo Eliminado " + ficInternos[i]);
+                                        System.out.println("El fichero ha sido borrado satisfactoriamente = " + ficInternos[i]);
+                                    } catch (Exception errFil) {
+                                        System.err.println("El fichero no puede ser borrado: " + ficInternos[i] + " ");
+                                        System.err.println(errFil);
+                                    }
+                                }
+                                if (ficInternos[i].indexOf(nameFileWinrar) != -1) {
+                                    try {
+                                        File fn = new File(carpetaInterna + "\\" + ficInternos[i]);
+                                        fn.delete();
+                                        jTxtResultado.setText(jTxtResultado.getText() + "\n" + "Archivo Eliminado " + ficInternos[i]);
+                                        System.out.println("El fichero ha sido borrado satisfactoriamente = " + ficInternos[i]);
+                                    } catch (Exception errFil) {
+                                        System.err.println("El fichero no puede ser borrado: " + ficInternos[i] + " ");
+                                        System.err.println(errFil);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                JOptionPane.showMessageDialog(rootPane, "Se ha completado el proceso", "Proceso Terminado", JOptionPane.INFORMATION_MESSAGE);
             }
-            JOptionPane.showMessageDialog(rootPane, "Se ha completado el proceso", "Proceso Terminado", JOptionPane.INFORMATION_MESSAGE);
+        }else{
+            jTxtResultado.setText("No existen programas de descompresion (Winrar/7Zip)... Operacion Cancelada.");
         }
+        
+
     }//GEN-LAST:event_jButton2ActionPerformed
 
+
+    public boolean Verificar7Zip(){
+        String tmpRuta7Zip = "C:\\Program Files\\7-Zip\\7z.exe";
+        File rutaFile7Zip = new File(tmpRuta7Zip);
+        if (rutaFile7Zip.exists()) {
+            Ruta7Zip = tmpRuta7Zip;
+            return true;
+        }else{
+            tmpRuta7Zip = "C:\\Program Files (x86)\\7-Zip\\7z.exe";
+            rutaFile7Zip = new File(tmpRuta7Zip);
+            if (rutaFile7Zip.exists()) {
+                Ruta7Zip = tmpRuta7Zip;
+                return true;
+            }else{
+                System.out.println("No se encontro el programa 7Zip instalado en el sistema...");
+                jTxtResultado.setText("No se encontro el programa 7Zip instalado en el sistema...");
+                return false;
+            }
+        }
+    }
+
+    public boolean VerificarWinRAR(){
+        String tmpRutaWinRar = "C:\\Program Files\\WinRAR\\WinRAR.exe";
+        File rutaFileWinrar = new File(tmpRutaWinRar);
+        if (rutaFileWinrar.exists()) {
+            RutaWinRar = tmpRutaWinRar;
+            return true;
+        }else{
+            tmpRutaWinRar = "C:\\Program Files (x86)\\WinRAR\\WinRAR.exe";
+            rutaFileWinrar = new File(tmpRutaWinRar);
+            if (rutaFileWinrar.exists()) {
+                RutaWinRar = tmpRutaWinRar;
+                return true;
+            }else{
+                System.out.println("No se encontro el programa Winrar instalado en el sistema...");
+                jTxtResultado.setText("No se encontro el programa Winrar instalado en el sistema...");
+                return false;
+            }
+        }
+    }
+  
     
     /**
      * @param args the command line arguments
@@ -260,6 +324,63 @@ public class Main extends javax.swing.JFrame {
         });
     }
 
+    public boolean Descompress7Zip(String Carpeta, String Archivo) {
+        try {
+            String comando = Ruta7Zip+" x \""+Carpeta+"\\"+Archivo+"\" -y -o\""+Carpeta+"\\\"";
+            System.out.println(comando);
+            Process process = Runtime.getRuntime().exec(comando); //Ejecutamos el comando para descomprimir con 7Zip
+
+            // Obtenemos el buffer de salida de la consola.
+            InputStream inputstream = process.getInputStream();
+            BufferedInputStream bufferedinputstream = new BufferedInputStream(inputstream);
+
+            //Mostramos el buffer de salida en el text
+            byte[] contents = new byte[1024];
+            int bytesRead=0;
+            String strResultContent = null; 
+            while( (bytesRead = bufferedinputstream.read(contents)) != -1){
+               strResultContent = new String(contents, 0, bytesRead);
+            }
+            jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Finalizo Archivo "+Archivo);;
+            jTxtResultado.setText(jTxtResultado.getText()+"\n"+strResultContent);
+            process.destroy();
+            return true;
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+    
+    public boolean DescompressWinRAR(String Carpeta, String Archivo) {
+        try {
+            String comando = RutaWinRar+" X \""+Carpeta+"\\"+Archivo+"\" \""+Carpeta+"\\\"";
+            System.out.println(comando);
+            Process process = Runtime.getRuntime().exec(comando); //Ejecutamos el comando para descomprimir con Winrar
+
+            // Obtenemos el buffer de salida de la consola.
+            InputStream inputstream = process.getInputStream();
+            BufferedInputStream bufferedinputstream = new BufferedInputStream(inputstream);
+
+            //Mostramos el buffer de salida en el text
+            byte[] contents = new byte[1024];
+            int bytesRead=0;
+            String strResultContent = null; 
+            while( (bytesRead = bufferedinputstream.read(contents)) != -1){
+               strResultContent = new String(contents, 0, bytesRead);
+            }
+            jTxtResultado.setText(jTxtResultado.getText()+"\n"+"Finalizo Archivo "+Archivo);;
+            jTxtResultado.setText(jTxtResultado.getText()+"\n"+strResultContent);
+            process.destroy();
+            return true;
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+    
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JFileChooser JFC_Carpeta;
     private javax.swing.JTextField JTF_Dir;
